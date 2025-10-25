@@ -35,26 +35,32 @@ IS_FIREBASE_INITIALIZED = False
 try:
     if DB_URL and CREDENTIALS_JSON:
         # 1. Vercel 환경 변수 사용 (배포 환경)
-        # JSON 문자열을 Python 딕셔너리로 변환
+        # JSON 문자열을 Python 딕셔너리로 로드
         cred_info = json.loads(CREDENTIALS_JSON)
         cred = credentials.Certificate(cred_info)
         
         # 환경 변수에서 가져온 DB URL로 초기화
         firebase_admin.initialize_app(cred, {'databaseURL': DB_URL})
         print("DEBUG: Firebase Admin SDK 초기화 완료 (Vercel 환경 변수 사용).")
-
-    else:
-        # 2. 로컬 파일 사용 (로컬 테스트 환경)
+        IS_FIREBASE_INITIALIZED = True
+        
+    elif os.path.exists(LOCAL_CRED_FILE):
+        # 2. 로컬 파일이 존재할 경우에만 로컬 테스트 환경으로 진입
+        # os.path.exists()를 사용하여 FileNotFoundError를 사전에 방지
         cred = credentials.Certificate(LOCAL_CRED_FILE)
         firebase_admin.initialize_app(cred, {'databaseURL': LOCAL_DB_URL})
         print(f"DEBUG: Firebase Admin SDK 초기화 완료 (로컬 파일 '{LOCAL_CRED_FILE}' 사용).")
+        IS_FIREBASE_INITIALIZED = True
+    
+    else:
+        # Vercel 환경이며 환경 변수도 없고, 로컬 파일도 없을 때: 초기화 건너뛰기
+        print("WARNING: Firebase Admin SDK가 초기화되지 않았습니다. 환경 변수 또는 로컬 JSON 파일이 누락되었습니다.")
 
-    IS_FIREBASE_INITIALIZED = True
 
-except FileNotFoundError:
-    print(f"ERROR: 로컬에서 '{LOCAL_CRED_FILE}' 파일을 찾을 수 없습니다. Firebase 연동 없이 실행됩니다.")
 except Exception as e:
-    print(f"ERROR: Firebase 초기화 중 오류 발생: {e}")
+    # 파싱 오류나 기타 초기화 오류 발생 시 (환경 변수 값 오류 가능성 높음)
+    print(f"FATAL ERROR: Firebase 초기화 중 치명적인 오류 발생: {e}")
+    IS_FIREBASE_INITIALIZED = False
 
 
 # --- 2. 학교명 변환 딕셔너리 ---
