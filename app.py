@@ -7,10 +7,10 @@ import re # 괄호 제거를 위해 re 모듈 추가
 import json #  [추가] 환경 변수의 JSON 문자열 파싱을 위해 추가
 
 #  [수정] Firebase Admin SDK 임포트
-# import firebase_admin  # 임시 주석 처리
-# from firebase_admin import credentials # 임시 주석 처리
-# from firebase_admin import db # 임시 주석 처리
-import firebase_admin # 다시 살려둡니다.
+import firebase_admin  # 임시 주석 처리
+from firebase_admin import credentials # 임시 주석 처리
+from firebase_admin import db # 임시 주석 처리
+#import firebase_admin # 다시 살려둡니다.
 
 
 html = 'miri.html' # 템플릿 파일명 설정
@@ -26,11 +26,11 @@ LOCAL_DB_URL = 'https://gpsk-eaf81-default-rtdb.firebaseio.com/'
 # ----------------------------------------------------
 
 # Vercel 환경 변수에서 값 로드 시도
-#DB_URL = os.environ.get('FIREBASE_DATABASE_URL')
-#CREDENTIALS_JSON = os.environ.get('FIREBASE_CREDENTIALS_JSON')
+DB_URL = os.environ.get('FIREBASE_DATABASE_URL')
+CREDENTIALS_JSON = os.environ.get('FIREBASE_CREDENTIALS_JSON')
 IS_FIREBASE_INITIALIZED = False # 초기화 상태 플래그
 
-'''try:
+try:
     if DB_URL and CREDENTIALS_JSON:
         # 1. Vercel 환경 변수 사용 (배포 환경)
         # JSON 문자열을 Python 딕셔너리로 변환
@@ -59,7 +59,7 @@ except Exception as e:
     # 파싱 오류나 기타 초기화 오류 발생 시 (환경 변수 값 형식 오류 가능성 높음)
     print(f"FATAL ERROR: Firebase 초기화 중 치명적인 오류 발생: {e}")
     IS_FIREBASE_INITIALIZED = False
-'''
+
 
 # --- 2. 학교명 변환 딕셔너리 ---
 SCHOOL_ALIAS_MAP = {
