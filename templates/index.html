@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학교 정보 크롤러</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        form { margin-bottom: 30px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input[type="text"], input[type="date"] { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; margin-top: 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        #result { margin-top: 30px; padding: 20px; background-color: #f9f9f9; border: 1px solid #eee; border-radius: 8px; }
+        pre { white-space: pre-wrap; word-wrap: break-word; background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 4px; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🏫 학교 정보 크롤링 서비스</h1>
+
+    <form method="POST" action="/scrape">
+        <label for="school_name">학교명 (예: 대현고):</label>
+        <input type="text" id="school_name" name="school_name" placeholder="학교 약칭 또는 정식 명칭을 입력하세요" required>
+
+        <label for="date">원하는 날짜:</label>
+        <input type="date" id="date" name="date" required>
+
+        <button type="submit">정보 가져오기</button>
+    </form>
+
+    <div id="result">
+        {% if result %}
+            <h2>{{ school }} ({{ date }}) 정보:</h2>
+            {% if "오류" in school or "오류" in result %}
+                <pre class="error">오류 발생: {{ result }}</pre>
+            {% else %}
+                <pre>{{ result }}</pre>
+            {% endif %}
+        {% else %}
+            <p>학교명과 날짜를 입력하고 '정보 가져오기' 버튼을 눌러주세요.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
