@@ -31,7 +31,7 @@ app = Flask(__name__)
 try:
     # 'serviceAccountKey.json' 파일명은 실제 다운로드한 파일명으로 대체해야 합니다.
     # Vercel 배포 시에는 이 부분을 환경 변수 로직으로 변경하는 것을 강력히 권장합니다.
-    cred = credentials.Certificate("serviceAccountKey.json")
+    cred = credentials.Certificate("gpsk-eaf81-firebase-adminsdk-fbsvc-8659a9f7ec.json")
     # Realtime Database URL 설정 (콘솔에서 확인)
     firebase_admin.initialize_app(cred, {
         'databaseURL': 'https://gpsk-eaf81-default-rtdb.firebaseio.com/' # 예: 'https://your-project-id.firebaseio.com'
