@@ -14,28 +14,26 @@ from firebase_admin import db
 
 
 html = 'miri.html' # 템플릿 파일명 설정
-# html = 'index.html' # (필요 시 주석 해제하여 사용 가능)
 
 app = Flask(__name__)
 
-# --- 1. 환경 설정 ---
-# 사용자의 실제 파일명과 URL을 로컬 테스트용 상수로 정의
+# --- 1. 환경 설정 (사용자님의 파일명과 URL) ---
 LOCAL_CRED_FILE = "gpsk-eaf81-firebase-adminsdk-fbsvc-8659a9f7ec.json"
 LOCAL_DB_URL = 'https://gpsk-eaf81-default-rtdb.firebaseio.com/' 
 
 # ----------------------------------------------------
-# 🔥🔥🔥 [수정] Firebase Admin SDK 초기화 (Vercel 환경 변수 우선 사용)
+# 🔥🔥🔥 [수정] Firebase Admin SDK 초기화 (Vercel 안전 로직 적용)
 # ----------------------------------------------------
 
 # Vercel 환경 변수에서 값 로드 시도
 DB_URL = os.environ.get('FIREBASE_DATABASE_URL')
 CREDENTIALS_JSON = os.environ.get('FIREBASE_CREDENTIALS_JSON')
-IS_FIREBASE_INITIALIZED = False
+IS_FIREBASE_INITIALIZED = False # 초기화 상태 플래그
 
 try:
     if DB_URL and CREDENTIALS_JSON:
         # 1. Vercel 환경 변수 사용 (배포 환경)
-        # JSON 문자열을 Python 딕셔너리로 로드
+        # JSON 문자열을 Python 딕셔너리로 변환
         cred_info = json.loads(CREDENTIALS_JSON)
         cred = credentials.Certificate(cred_info)
         
@@ -46,7 +44,7 @@ try:
         
     elif os.path.exists(LOCAL_CRED_FILE):
         # 2. 로컬 파일이 존재할 경우에만 로컬 테스트 환경으로 진입
-        # os.path.exists()를 사용하여 FileNotFoundError를 사전에 방지
+        # os.path.exists()로 파일을 찾는 시도를 안전하게 처리
         cred = credentials.Certificate(LOCAL_CRED_FILE)
         firebase_admin.initialize_app(cred, {'databaseURL': LOCAL_DB_URL})
         print(f"DEBUG: Firebase Admin SDK 초기화 완료 (로컬 파일 '{LOCAL_CRED_FILE}' 사용).")
@@ -58,7 +56,7 @@ try:
 
 
 except Exception as e:
-    # 파싱 오류나 기타 초기화 오류 발생 시 (환경 변수 값 오류 가능성 높음)
+    # 파싱 오류나 기타 초기화 오류 발생 시 (환경 변수 값 형식 오류 가능성 높음)
     print(f"FATAL ERROR: Firebase 초기화 중 치명적인 오류 발생: {e}")
     IS_FIREBASE_INITIALIZED = False
 
@@ -68,7 +66,7 @@ SCHOOL_ALIAS_MAP = {
     "대현고": "대현고등학교",
     "강남고": "강남고등학교",
     "신선여고": "신선여자고등학교",
-    "홈플공고": "대현고등학교" # 예시
+    "홈플공고": "대현고등학교" 
 }
 
 
@@ -89,7 +87,8 @@ def fetch_data_from_firebase(school_name, formatted_date):
     Firebase Realtime Database에서 학교 급식 데이터를 가져옵니다.
     """
     if not IS_FIREBASE_INITIALIZED:
-        return "데이터 로드 오류: Firebase Admin SDK 초기화에 실패했습니다. 환경 변수/JSON 파일 설정을 확인하세요."
+        # 초기화 실패 시 DB 접근을 막고 오류 메시지를 반환
+        return "데이터 로드 오류: Firebase Admin SDK 초기화에 실패했습니다. Vercel 환경 변수 설정을 확인하세요."
         
     try:
         # 데이터베이스의 루트 참조 (meal_data/{학교명}/{YYYYMMDD})
@@ -147,9 +146,9 @@ def scrape_data():
         formatted_date_for_db
     )
 
-    # 결과에서 괄호() 안의 내용과 괄호 자체를 제거 (오류 메시지가 아닌 경우에만 적용)
+    # 결과 정제 (오류 메시지가 아닌 경우에만 괄호 제거)
     if crawled_data and not crawled_data.startswith("데이터 로드 오류") and not "정보는 데이터베이스에 없습니다" in crawled_data:
-        # 정규 표현식: \(.*?\): 여는 괄호, 닫는 괄호 및 그 사이의 모든 문자를 찾습니다.
+        # 정규 표현식: 괄호와 괄호 안의 내용 전체 제거
         crawled_data = re.sub(r'\(.*?\)', '', crawled_data).strip()
 
     # 결과를 프론트엔드로 전달
@@ -160,7 +159,5 @@ def scrape_data():
 
 
 if __name__ == '__main__':
-    # Flask 앱 실행
     # 로컬 환경 테스트를 위해 debug=True 설정
-    # Vercel 배포 시에는 gunicorn 등의 WSGI 서버가 이 부분을 대신 실행합니다.
     app.run(debug=True)
