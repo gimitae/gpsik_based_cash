@@ -34,7 +34,7 @@ try:
     cred = credentials.Certificate("serviceAccountKey.json")
     # Realtime Database URL 설정 (콘솔에서 확인)
     firebase_admin.initialize_app(cred, {
-        'databaseURL': 'YOUR_FIREBASE_DATABASE_URL_HERE' # 예: 'https://your-project-id.firebaseio.com'
+        'databaseURL': 'https://gpsk-eaf81-default-rtdb.firebaseio.com/' # 예: 'https://your-project-id.firebaseio.com'
     })
     
     # Firestore를 사용하는 경우:
