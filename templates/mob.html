@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학교 정보 크롤러 (Flask)</title>
+
+    <!-- Google Fonts: 인터페이스 기본 폰트 (Noto Sans KR) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: 크롤링 결과 폰트 (Jua로 다시 변경) -->
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+
+    <style>
+        /* 2. [수정됨] body 태그에 기본 폰트 (Noto Sans KR) 적용 */
+        body {
+            font-family: 'Noto Sans KR', sans-serif; /* 기본 인터페이스 폰트 적용 */
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .container { max-width: 700px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
+        form { margin-bottom: 30px; padding: 20px; border: 1px solid #e0e6e9; border-radius: 8px; background-color: #fcfcfc; }
+        label { display: block; margin-top: 15px; font-weight: 600; color: #34495e; }
+        input[type="text"], input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            box-sizing: border-box;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, input[type="date"]:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            margin-top: 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        button:hover { background-color: #2980b9; }
+
+        /* 외부 콘텐츠 및 크롤링 결과 오버레이를 위한 Wrapper */
+        #embed-wrapper {
+            position: relative;
+            margin-top: 40px;
+            margin-bottom: 30px;
+        }
+
+        /* [핵심 수정]: #result 스타일 (데스크탑 기본값) */
+        #result {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            z-index: 10;
+            font-family: 'Jua', sans-serif;
+            background-color: transparent;
+            box-shadow: none;
+            text-align: center;
+            padding-top: 10em; /* 데스크탑 기본 수직 위치 */
+            line-height: 1.5;
+        }
+
+        /* 결과 제목 스타일 (데스크탑 기본값) */
+        #result h2 {
+            color: white;
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 1em;
+            font-size: 43px; /* 데스크탑 기본 크기 */
+            font-weight: normal;
+        }
+
+        /* 크롤링 결과 텍스트 스타일 (데스크탑 기본값) */
+        #result pre {
+            font-family: 'Jua', sans-serif;
+            background-color: transparent;
+            border: none;
+            padding: 0;
+            margin-top: 3em;
+            color: white;
+            font-size: 30px; /* 데스크탑 기본 크기 */
+        }
+        .error {
+            color: #ffdddd; /* 오류 메시지는 약간 붉은 흰색으로 */
+            font-weight: bold;
+        }
+
+        /* ================================================= */
+        /* [추가됨] 모바일 반응형 스타일: 600px 이하 화면 */
+        /* ================================================= */
+        @media screen and (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            /* 전체 결과 오버레이의 수직 위치 조정 (좀 더 위로) */
+            #result {
+                padding-top: 7em; /* 데스크탑 10em -> 모바일 7em 로 줄여 텍스트 시작 위치 조정 */
+            }
+
+            /* 결과 제목 스타일 조정 */
+            #result h2 {
+                font-size: 28px; /* 43px -> 28px 로 줄임 */
+                margin-bottom: 0.5em; /* 간격 축소 */
+            }
+
+            /* 크롤링 결과 텍스트 스타일 조정 */
+            #result pre {
+                font-size: 20px; /* 30px -> 20px 로 줄임 */
+                margin-top: 2em; /* 간격 조정 */
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏫 학교 정보 크롤링 서비스</h1>
+
+        <form method="POST" action="/scrape">
+            <label for="school_name">학교명 (예: 대현고, 강남고):</label>
+            <input type="text" id="school_name" name="school_name" placeholder="학교 약칭 또는 정식 명칭을 입력하세요" required>
+
+            <label for="date">원하는 날짜 (YYYY-MM-DD):</label>
+            <input type="date" id="date" name="date" required>
+
+            <button type="submit">정보 가져오기</button>
+        </form>
+
+        <hr style="margin: 30px 0; border: 0; border-top: 1px dashed #ccc;">
+
+        <h2 style="margin-bottom: 20px;">정보 출력 영역</h2>
+        <div id="embed-wrapper">
+
+            <!-- 1. 크롤링 결과 오버레이 (결과가 있을 때만 표시) -->
+            {% if result %}
+                <div id="result">
+                    <h2>{{ school }} {{ date }} 급식</h2>
+                    {% if "오류" in result %}
+                        <pre class="error">{{ result }}</pre>
+                    {% else %}
+                        <pre>{{ result }}</pre>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- 2. 미리캔버스 임베드 템플릿 (배경 콘텐츠) -->
+            <div style='position: relative; width: 100%; height: 0; padding-top: 141.41414141414143%; overflow: hidden; will-change: transform;'>
+                <iframe loading='lazy' style='position: absolute; width: 100%; height: 100%; top: 0; left: 0; border: none; padding: 0; margin: 0;' src='https:&#x2F;&#x2F;www.miricanvas.com&#x2F;v&#x2F;154duv0?embed'>
+                </iframe>
+            </div>
+
+        </div>
+
+    </div>
+</body>
+</html>
