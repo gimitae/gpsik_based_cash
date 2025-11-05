@@ -13,7 +13,7 @@ from firebase_admin import db # 임시 주석 처리
 #import firebase_admin # 다시 살려둡니다.
 
 
-html = 'miri.html' # 템플릿 파일명 설정
+html = 'mob.html' # 템플릿 파일명 설정
 
 app = Flask(__name__)
 
