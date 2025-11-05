@@ -148,7 +148,7 @@
             <!-- 1. 크롤링 결과 오버레이 (결과가 있을 때만 표시) -->
             {% if result %}
                 <div id="result">
-                    <h2>{{ school }} {{ date }} 급식</h2>
+                    <h2> {{ date }} 급식</h2>
                     {% if "오류" in result %}
                         <pre class="error">{{ result }}</pre>
                     {% else %}
